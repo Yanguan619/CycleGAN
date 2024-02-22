@@ -1,0 +1,13 @@
+numpy
+seaborn
+scikit-image
+
+torchfile
+torch==2.0.1+cu117
+torchaudio==2.0.2+cu117
+torchvision==0.15.2+cu117
+tensorboardX
+
+lightning
+
+gradio== 3.35.2

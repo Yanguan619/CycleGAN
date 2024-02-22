@@ -1,0 +1,54 @@
+# 版权所有 (C) 2018 NVIDIA公司。保留所有权利。
+# 根据CC BY-NC-SA 4.0许可证（https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode）授权。
+
+# 日志记录选项
+image_save_iter: 10000        # 训练期间保存输出图像的频率
+image_display_iter: 100       # 训练期间显示输出图像的频率
+display_size: 16              # 每次要显示多少张图像
+snapshot_save_iter: 1000      # 训练模型的保存频率
+log_iter: 1                   # 记录训练统计信息的频率
+
+# 优化选项
+max_iter: 1000000             # 最大训练迭代次数
+batch_size: 1                 # 批量大小
+weight_decay: 0.0001          # 权重衰减
+beta1: 0.5                    # Adam参数
+beta2: 0.999                  # Adam参数
+init: kaiming                 # 初始化[高斯/凯明/泽维尔/正交]
+lr: 0.0001                    # 初始学习率
+lr_policy: step               # 学习率调度程序
+step_size: 100000             # 学习率衰减频率
+gamma: 0.5                    # 学习率衰减量
+gan_w: 1                      # 对抗损失权重
+recon_x_w: 10                 # 图像重建损失权重
+recon_s_w: 1                  # 风格重建损失权重
+recon_c_w: 1                  # 内容重建损失权重
+recon_x_cyc_w: 10             # 显式风格增强循环一致性损失权重
+vgg_w: 0                      # 域不变感知损失权重
+
+# 模型选项
+gen:
+  dim: 64                     # 底层层中的滤波器数量
+  mlp_dim: 256                # MLP中的滤波器数量
+  style_dim: 8                # 风格代码的长度
+  activ: relu                 # 激活函数[relu/lrelu/prelu/selu/tanh]
+  n_downsample: 2             # 内容编码器中的下采样层数
+  n_res: 4                    # 内容编码器/解码器中的残差块数
+  pad_type: reflect           # 填充类型[zero/reflect]
+dis:
+  dim: 64                     # 底层层中的滤波器数量
+  norm: none                  # 归一化层[none/bn/in/ln]
+  activ: lrelu                # 激活函数[relu/lrelu/prelu/selu/tanh]
+  n_layer: 4                  # D中的层数
+  gan_type: lsgan             # GAN损失[lsgan/nsgan]
+  num_scales: 3               # 尺度数量
+  pad_type: reflect           # 填充类型[zero/reflect]
+
+# 数据选项
+input_dim_a: 3                               # 图像通道数[1/3]
+input_dim_b: 3                               # 图像通道数[1/3]
+num_workers: 8                               # 数据加载线程数
+new_size: 256                                # 将最短图像边缘调整为此大小
+crop_image_height: 256                       # 随机裁剪此高度的图像
+crop_image_width: 256                        # 随机裁剪此宽度的图像
+data_root: ./datasets/summer2winter_yosemite # 数据集文件夹位置
