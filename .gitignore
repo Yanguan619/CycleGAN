@@ -5,3 +5,4 @@
 /weights/munit/*
 /weights/funit/*
 *.onnx
+__pycache__/*
