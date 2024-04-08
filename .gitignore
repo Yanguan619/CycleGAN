@@ -6,3 +6,4 @@
 /weights/funit/*
 *.onnx
 __pycache__/*
+*.pyc

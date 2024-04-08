@@ -4,6 +4,8 @@
 >>> gradio unit/app.py demo
 """
 from pathlib import Path
+import random
+import time
 
 import gradio as gr
 
@@ -63,7 +65,7 @@ def gr_weight_list(model_name):
         log.info(f"Model [{type(model).__name__}] was created")
     else:
         log.warning(f"Model [{type(model).__name__}] was existed")
-    gr_model_name = gr.Dropdown.update(
+    gr_model_name = gr.Dropdown(
         value=get_all_weights(model_name)[0],
         choices=get_all_weights(model_name),
         label="转换风格",
@@ -122,7 +124,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args):
 
         return gr.update(**(args or {}))
 
-    refresh_button = gr.Button(label="刷新", value=refresh_symbol).style(full_width=True)
+    refresh_button = gr.Button(value=refresh_symbol)#.style(full_width=True)
     refresh_button.click(fn=refresh, inputs=[], outputs=[refresh_component])
     return refresh_button
 
@@ -163,72 +165,106 @@ if Path(CSS_PATH).exists():
 else:
     CSS = None
 
+
+def tab_img_generate():
+    with gr.Tab("图像生成"):
+        gr.Markdown("# TODO")
+        
+
+def chat_gpt(text:str):
+    return ".............."
+
+def tab_text_generate():
+    with gr.Tab("文本生成"):
+        with gr.Row():
+            with gr.Column(scale=3):
+                chatbot = gr.Chatbot()
+                msg = gr.Textbox()
+                with gr.Row():
+                    gr.ClearButton([msg])
+                    query = gr.Button(variant='primary')
+
+                @query.click(inputs=[msg,chatbot], outputs=[msg,chatbot])
+                def respond(message, chat_history):
+                    bot_message = random.choice(["How are you?", "I love you", "I'm very hungry"])
+                    chat_history.append((message, bot_message))
+                    return "", chat_history
+
+                msg.submit(respond, [msg, chatbot], [msg, chatbot])
+            with gr.Column(min_width=120):
+                gr.Markdown("# TODO")
+
 demo = gr.Blocks(title="风格转换", css=CSS)
 with demo:
-    gr.Markdown(APP_INTRODUCE)
-    # header
-    with gr.Row():
-        with gr.Column(scale=2):
-            model_name = gr.Dropdown(
-                choices=model_name_list, value=model_name_list[0], label="模型选择"
+    tab_img_generate()
+    with gr.Tab("图像转换"):
+        gr.Markdown(APP_INTRODUCE)
+        # header
+        with gr.Row():
+            with gr.Column(scale=2):
+                model_name = gr.Dropdown(
+                    choices=model_name_list, value=model_name_list[0], label="模型选择"
+                )
+        with gr.Tab(label="单图转换"):
+            with gr.Row():
+                with gr.Column(scale=1):
+                    img = gr.Image(type="pil", label="选择需要进行风格转换的图片")
+                with gr.Column(scale=1):
+                    img_mode = gr.Radio(["图片", "摄像头"], value="图片", label="上传图片/通过摄像头读取图片")
+                    img_mode.change(fn=gr_img_mode, inputs=img_mode, outputs=img)
+                    style = gr.Dropdown(
+                        choices=get_all_weights(default_model),
+                        value=default_style,
+                        label="选择转换风格",
+                    )
+                    # class_img_folder_dir = gr.Files(
+                    #     visible=False,
+                    #     value=class_imgs,
+                    #     label="上传图片，funit会向着该图进行风格转换",
+                    # )
+                    detect_btn = gr.Button("♻️ 风格转换")
+                with gr.Column(scale=1):
+                    out_img = gr.Image(label="风格图",height=256, width=256)
+            detect_btn.click(fn=single_detect, inputs=[img, style], outputs=[out_img])
+            if example_imgs:
+                gr.Examples(example_imgs, inputs=[img], label="示例图片")
+        # 2
+        with gr.Tab(label="单图多风格预览"):
+            with gr.Row():
+                with gr.Column(scale=1):
+                    img = gr.Image(type="pil", label="选择需要进行风格转换的图片")
+                with gr.Column(scale=1):
+                    img_mode = gr.Radio(["图片", "摄像头"], value="图片", label="上传图片/通过摄像头读取图片")
+                    img_mode.change(fn=gr_img_mode, inputs=img_mode, outputs=img)
+                    btn = gr.Button("♻️ 风格转换(会将所有风格推理一遍)")
+                with gr.Column(scale=3):
+                    gallery = gr.Gallery(label="风格图", elem_id="gallery",columns=5, height="auto")
+            btn.click(fn=multi_style_detect, inputs=[img, model_name], outputs=gallery)
+            if example_imgs:
+                gr.Examples(example_imgs, inputs=[img], label="示例图片")
+        with gr.Tab(label="训练CycleGAN"):
+            choice_datasets = gr_refresh()
+
+            btn_train = gr.Button("📖训练")
+            btn_train.click(
+                train, choice_datasets, gr.Label(label="训练进度"), show_progress=True
             )
-    with gr.Tab(label="单图转换"):
-        with gr.Row():
-            with gr.Column(scale=1):
-                img = gr.Image(type="pil", label="选择需要进行风格转换的图片")
-            with gr.Column(scale=1):
-                img_mode = gr.Radio(["图片", "摄像头"], value="图片", label="上传图片/通过摄像头读取图片")
-                img_mode.change(fn=gr_img_mode, inputs=img_mode, outputs=img)
-                style = gr.Dropdown(
-                    choices=get_all_weights(default_model),
-                    value=default_style,
-                    label="选择转换风格",
-                )
-                # class_img_folder_dir = gr.Files(
-                #     visible=False,
-                #     value=class_imgs,
-                #     label="上传图片，funit会向着该图进行风格转换",
-                # )
-                detect_btn = gr.Button("♻️ 风格转换")
-            with gr.Column(scale=1):
-                out_img = gr.Image(label="风格图").style(height=256, width=256)
-        detect_btn.click(fn=single_detect, inputs=[img, style], outputs=[out_img])
-        if example_imgs:
-            gr.Examples(example_imgs, inputs=[img], label="示例图片")
-    # 2
-    with gr.Tab(label="单图多风格预览"):
-        with gr.Row():
-            with gr.Column(scale=1):
-                img = gr.Image(type="pil", label="选择需要进行风格转换的图片")
-            with gr.Column(scale=1):
-                img_mode = gr.Radio(["图片", "摄像头"], value="图片", label="上传图片/通过摄像头读取图片")
-                img_mode.change(fn=gr_img_mode, inputs=img_mode, outputs=img)
-                btn = gr.Button("♻️ 风格转换(会将所有风格推理一遍)")
-            with gr.Column(scale=3):
-                gallery = gr.Gallery(label="风格图", elem_id="gallery").style(
-                    columns=5, height="auto"
-                )
-        btn.click(fn=multi_style_detect, inputs=[img, model_name], outputs=gallery)
-        if example_imgs:
-            gr.Examples(example_imgs, inputs=[img], label="示例图片")
-    with gr.Tab(label="训练CycleGAN"):
-        choice_datasets = gr_refresh()
-
-        btn_train = gr.Button("📖训练")
-        btn_train.click(
-            train, choice_datasets, gr.Label(label="训练进度"), show_progress=True
-        )
-        # xx = gr.Textbox()
-        # yy = gr.Textbox()
-        # btn_train.click(my_function, None, None, show_progress=True)
-    # with gr.Accordion("更多"):
-    # gr.Markdown("基于CycleGAN的图像风格转换")
-    model_name.change(gr_weight_list, model_name, [style])
-
+            # xx = gr.Textbox()
+            # yy = gr.Textbox()
+            # btn_train.click(my_function, None, None, show_progress=True)
+        # with gr.Accordion("更多"):
+        # gr.Markdown("基于CycleGAN的图像风格转换")
+        model_name.change(gr_weight_list, model_name, [style])
+    tab_text_generate()
 
 def start(share):
-    demo.queue(concurrency_count=1)
+    # demo.queue(concurrency_count=1)
     demo.launch(
         share=share,
         inbrowser=True,
     )
+
+
+if __name__ == '__main__':
+    start()
+    
